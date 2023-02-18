@@ -1,0 +1,41 @@
+---
+id: language-region-code
+title: Language/Region Code
+---
+
+[中文版](language-region-code-zh-cn)
+
+* For languages used in only one region or for global users, we only use the ISO 639-1 language code: `{language}`
+
+  E.g.
+
+  ```
+  https://www.binance.com/en
+  https://www.binance.com/ja
+  https://www.binance.com/ko
+  ```
+
+* For multiple regions using the same language, we add the additional ISO 3166-1 region code: `{language}-{region}`
+
+  E.g.
+
+  ```
+  https://www.binance.com/en-AU
+  https://www.binance.com/en-IN
+  https://www.binance.com/en-NG
+  ```
+
+Publishing a new language requires communication with the localization team whether the language needs to be translated by the localization team.
+
+If the localization team needs to maintain it, then add the corresponding language-region code in Smartling.
+If only existing languages are used, I18n system configuration language mapping is required
+
+There is one exception in our code: Filipino is not in ISO 639-1 and we use `ph`.
+
+You can find the full supported language list in [Language Menu API](https://www.binance.com/gateway-api/v1/public/common/config/getLanguageMapByKey).
+
+Reference links
+
+  * Language code [ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)
+  * Region code [ISO 3166-1](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2)
+  * [Language Menu API](https://www.binance.com/gateway-api/v1/public/common/config/getLanguageMapByKey)

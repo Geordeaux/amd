@@ -1,0 +1,20 @@
+# See the OWNERS docs at https://go.k8s.io/owners
+
+approvers:
+- cody
+- serena-li
+- cocoa-zhou
+- zhenlong-lin
+- alex-lin
+- james-he
+- ivan-nosov
+
+reviewers:
+- cody
+- serena-li
+- cocoa-zhou
+- zhenlong-lin
+- alex-lin
+- james-he
+- ivan-nosov
+

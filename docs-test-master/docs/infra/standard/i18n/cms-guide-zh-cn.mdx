@@ -1,0 +1,177 @@
+---
+id: cms-guide-zh-cn
+title: Internationalization (I18n CMS)
+---
+
+[English version](cms-guide)
+
+> 请操作时注意不要带灰度 header `k8scluster: ture`。
+
+## Overview
+
+I18n CMS 用来管理前端 UI string，满足产品、开发、翻译三方的国际化[^1]需求，
+提供国际化英文文案（翻译源）管理，连接Smartling[^2]同步翻译，文案发布上线，三个基础功能。
+
+## Source String 格式和规则
+
+Source String 基本的原则是保证可翻译性
+其必须满足以下规则:
+
+1. 必须是完整的句子，不允许使用片段或者丢失关键内容信息。
+2. 占位符使用英文双花括号 比如： `{{user}}`。
+3. 占位符应当是简单直白的句子成分，便于理解和管理。
+4. 请避免使用带有参数的富文本 HTML 格式，比如 styles href 这样的参数。
+5. 填写 instruction 翻译人员理解上下文保证翻译质量.
+6. 必要的时候填写 max length 防止翻译过长超过UI的格子。
+
+对于历史遗留的不符合规范的 string，应该逐渐替换。
+
+### 例子
+
+#### Basic string
+
+```json
+{"example-basic":"Hello World!"}
+```
+
+#### String with placeholder
+
+```json
+{"example-placeholder": "Hello {{userName}}!"}
+```
+
+#### Plurals
+
+Source
+
+```json
+{
+  "example-count": "{{count}} item",
+  "example-count_plural": "{{count}} items"
+}
+```
+
+Usage
+
+```javascript
+i18next.t('example-count', {count: 0}); // -> "0 items"
+i18next.t('example-count', {count: 1}); // -> "1 item"
+i18next.t('example-count', {count: 5}); // -> "5 items"
+i18next.t('example-count', {count: 100}); // -> "100 items"
+```
+
+#### String with React Component
+
+Source
+
+```json
+{"example-component": "Please read and agree to <t>Terms of Use</t> and <p>Privacy Policy</p>"}
+```
+
+Note: Do not use number tag such as `<0>test<0/>`, Smartling dose not support this. You will get `&lt;0&gt;test&lt;0/&gt;`.
+
+Usage [[1]](https://react.i18next.com/latest/trans-component#alternative-usage-v-11-6-0)
+
+```jsx
+<Trans
+  i18nKey="example-component"
+  components={{ t: <Link href="https://link1" />, p: <Link href="https://link2" /> }}
+/>
+```
+
+## I18n CMS
+
+### 注册与登陆
+
+第一次访问，请联系管理员 Archer(lee.l@binance.com) 添加账号到 okta 应用。
+
+### File 界面
+
+Okta 登陆之后可以访问 files 页面，可以选择需要管理的 file 点击进入，也可以添加新的 file。
+
+### File 详情页
+
+可以看见 String 和 Job 两个Tab，顶部的 Add strings 是用来添加string的界面。
+
+#### Add Strings
+
+本页面可以录入多个 string 并且直接提交job，请保存好 Job name 方便之后管理。添加的 string 会在 DEV环境，发布上线前需要在Job页面进行publish操作发布到生产。
+
+#### Strings 的查看与管理
+
+已经添加的 string 可以 修改 max length 和 instruction。 Environment 表示该 string 的环境 DEV为开发环境，PROD 为生产环境。
+
+#### Jobs 页面
+
+可以查看 Job name 创建者和创建时间， publish 按钮可以把 Job 内的修改发布到线上（发布会包括所有翻译）。
+
+### 翻译同步
+
+所有添加到系统的 string 都会自动推送到 Smartling 进行翻译，Smartling 已经完成的翻译也会立即同步到系统，
+所有缓存[^3]都过期后， web 页面即可访问到新的内容，
+
+### API
+
+GET {path}/{locale}/{namespace}
+
+E.g. https://static.devfdg.net/api/i18n/-/web/cms/en/accounts-ui
+
+### PARAMETERS
+
+  **locale - string**
+
+  **namespace - string**
+
+  * 即 File 的名字， 如 accounts-ui
+
+  **path - string**
+
+  * `{path}` path 可以从 ConfigMap common-ui 中拿到 `I18N_BASE_PUBLIC`/`I18N_BASE_PRIVATE`.
+  * `I18N_BASE_PUBLIC` 是公网可访问的API地址，通常在客户端渲染 (CSR) 或本地开发中使用.
+  * `I18N_BASE_PRIVATE` 是内网API地址，通常在服务端渲染 (SSR) 中使用.
+
+  For Example
+
+```js
+import { queryI18nResourceV2 } from '@binance/api'
+
+// if your nodejs(SSR) service can accesss `I18N_BASE_PRIVATE`
+const basePath = typeof window !== 'undefined' || __DEV__ ? I18N_BASE_PUBLIC : I18N_BASE_PRIVATE
+
+// if your nodejs(SSR) service can't accesss `I18N_BASE_PRIVATE`
+const basePath = I18N_BASE_PUBLIC
+const i18n = await queryI18nResourceV2({
+    basePath,
+    locale,
+    namespace,
+  })
+
+```
+
+### 上线指南
+
+当项目上线时，需要先确保使用到的key存在于线上环境。
+
+检查事项
+
+1. 对应 Job 的内容是否已经成功 publish，可以筛选 Environment 为 PROD 搜索 key 来检查内容是否正确
+2. 由于 CDN 有缓存时间，需要检查线上接口是否已更新， 如 https://bin.bnbstatic.com/api/i18n/-/web/cms/zh-CN/Navigation
+
+### 自助接入
+
+在拿到系统权限之后
+
+1. 知会所有使用当前文件的项目负责人，停止更新 mono 中对应的文件
+2. 创建所有项目中使用到的 File，名字必须与 json 文件一致， 比如 `accounts-ui.json` 必须使用 `accounts-ui` 作为文件名
+3. 在 Add Strings 界面中使用 Upload JSON
+4. 点击 Create Job 创建 Job， 保存 Job name
+5. 在 Jobs 页面 找到对应 job，点击 publish 全选提交。
+6. 如果有正在进行中的PR，把新增的 String 通过 Job 再次创建，翻译需求无需再次提交
+7. 修改代码正常测试上线，参考[launchpad-ui 迁移 PR](https://git.toolsfdg.net/mono/mono/pull/32301)
+
+
+[^1]: [维基百科：国际化与本地化](https://zh.wikipedia.org/wiki/%E5%9B%BD%E9%99%85%E5%8C%96%E4%B8%8E%E6%9C%AC%E5%9C%B0%E5%8C%96)
+
+[^2]: [Smartling](https://dashboard.smartling.com/app/accounts/057fd503/account-overview/index.html) 是我们用来把 string 翻译成多语言的翻译管理系统简称 TMS
+
+[^3]: CDN 集群内部和浏览器自身都有缓存机制

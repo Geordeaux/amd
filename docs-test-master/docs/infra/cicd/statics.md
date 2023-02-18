@@ -1,0 +1,5 @@
+---
+id: statics
+title: Statics
+---
+

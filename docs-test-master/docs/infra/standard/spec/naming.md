@@ -1,0 +1,4 @@
+---
+id: naming
+title: Naming
+---

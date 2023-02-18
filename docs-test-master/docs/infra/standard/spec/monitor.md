@@ -1,0 +1,4 @@
+---
+id: monitor
+title: Monitor
+---

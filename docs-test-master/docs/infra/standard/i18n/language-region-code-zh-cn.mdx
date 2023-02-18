@@ -1,0 +1,39 @@
+---
+id: language-region-code-zh-cn
+title: 语言/地区代码
+---
+
+* 对于只有一个地区使用的语言或者针对全球用户的语言，我们只使用 ISO 639-1 language code： `{language}`
+
+  例如：
+
+  ```
+  https://www.binance.com/en
+  https://www.binance.com/ja
+  https://www.binance.com/ko
+  ```
+
+* 对于多个地区使用同一种语言，我们添加额外的 ISO 3166-1 region code `{language}-{region}`
+
+  例如：
+
+  ```
+  https://www.binance.com/en-AU
+  https://www.binance.com/en-IN
+  https://www.binance.com/en-NG
+  ```
+
+发布新语言需要和本地化团队沟通，是否语言需要本地化团队翻译。
+
+如果本地化团队需要维护，那在Smartling中添加对应的语言-地区代码；
+如果仅使用现有的语言，需要 I18n 系统配置语言映射。
+
+在我们的code中有一个例外：菲律宾语不在 ISO 639-1 中，我们使用了 `ph`。
+
+你可以在[语言菜单API](https://www.binance.com/gateway-api/v1/public/common/config/getLanguageMapByKey)中找到所有支持的语言列表.
+
+参考链接
+
+  * Language code [ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)
+  * Region code [ISO 3166-1](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2)
+  * [语言菜单API](https://www.binance.com/gateway-api/v1/public/common/config/getLanguageMapByKey)

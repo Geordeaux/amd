@@ -1,0 +1,187 @@
+---
+id: cms-guide
+title: Internationalization (I18n CMS)
+---
+
+[中文版](cms-guide-zh-cn)
+
+
+> Please avoid gray header `k8scluster: ture` while using the CMS.
+
+## Overview
+
+I18n CMS manages front-end UI strings, serves product teams, developer teams, and the Localization team.
+Provide three basic functions to manage the English strings (source strings) of internationalization(I18n)[^1],
+connects to Smartling[^2] to sync translations, and publish string online.
+
+## Source String Format & Rules
+
+The basic principle of source format is to ensure translatability.
+It must meet the following rules:
+
+1. It must be a complete sentence, clauses and missing content are not allowed.
+2. Placeholders should use double curly braces, e.g. {{user}}.
+3. Placeholders should have straight-forward meaning to read and maintain.
+4. Please avoid using rich text HTML syntax, avoid having attr in it, such as link styles, etc.
+5. Fill in the instruction to let the translator understand the context to ensure the quality of the translation.
+6. Fill in max length when necessary to prevent translation from breaking the UI.
+
+For legacy non-standard string, they should be gradually replaced in the future.
+
+### Examples
+
+#### Basic string
+
+```json
+{"example-basic":"Hello World!"}
+```
+
+#### String with placeholder
+
+```json
+{"example-placeholder": "Hello {{userName}}!"}
+```
+
+#### Plurals
+
+Source
+
+```json
+{
+  "example-count": "{{count}} item",
+  "example-count_plural": "{{count}} items"
+}
+```
+
+Usage
+
+```javascript
+i18next.t('example-count', {count: 0}); // -> "0 items"
+i18next.t('example-count', {count: 1}); // -> "1 item"
+i18next.t('example-count', {count: 5}); // -> "5 items"
+i18next.t('example-count', {count: 100}); // -> "100 items"
+```
+
+#### String with React Component
+
+Source
+
+```json
+{"example-component": "Please read and agree to <t>Terms of Use</t> and <p>Privacy Policy</p>"}
+```
+
+Note: Do not use number tag such as `<0>test<0/>`, Smartling dose not support this. You will get `&lt;0&gt;test&lt;0/&gt;`.
+
+Usage [[1]](https://react.i18next.com/latest/trans-component#alternative-usage-v-11-6-0)
+
+```jsx
+<Trans
+  i18nKey="example-component"
+  components={{ t: <Link href="https://link1" />, p: <Link href="https://link2" /> }}
+/>
+```
+
+## I18n CMS
+
+### Register & Login
+
+If you are new, contact Archer(lee.l@binance.com) to create an account.
+
+
+### File Page
+
+After login with Okta, you can access the file page,
+You can click the file name to the file detail page,
+and you can add a new file in this page.
+
+### File Detail Page
+
+You can see "Add strings" in the top, click to the "Add strings" page,and  two tabs "String" and "Job".
+
+#### Add Strings
+
+In this page, you can add a bunch of strings and submit it to a Job, you should hold the job name you created.
+after submit new content should available in DEV environment, you should punlish to PROD before your new version go released.
+
+#### Strings management
+
+The only the max length and instruction is editable a string has created, You can click "Update" to change it.
+The Environment shows which environment the string in, can be DEV(development) and PROD(production).
+
+
+#### Jobs Page
+
+You can see the Job list with job name, author and create time. click punlish strings to publish string from DEV to PROD.
+
+### Translation sync
+
+All the string in this system will push to Smartling for translation,
+and each language of the translation of the string will sync automatically.
+The changed data will effect the web page after all layer of caches[^3] has expired.
+
+
+### API
+
+GET {path}/{locale}/{namespace}
+
+E.g. https://static.devfdg.net/api/i18n/-/web/cms/en/accounts-ui
+
+### PARAMETERS
+
+  **locale - string**
+
+  **namespace - string**
+
+  * equal to the file name of CMS, e.g. accounts-ui
+
+  **path - string**
+
+  * `{path}` path is available in common-ui of ConfigMap named `I18N_BASE_PUBLIC`/`I18N_BASE_PRIVATE`.
+  * `STATIC_HOST_PUBLIC` is the public service address for client side or local service.
+  * `STATIC_HOST_PRIVATE` is the private service address for SSR(server side render)
+
+  For Example
+
+```js
+import { queryI18nResourceV2 } from '@binance/api'
+
+// if your nodejs(SSR) service can accesss `I18N_BASE_PRIVATE`
+const basePath = typeof window !== 'undefined' || __DEV__ ? I18N_BASE_PUBLIC : I18N_BASE_PRIVATE
+
+// if your nodejs(SSR) service can't accesss `I18N_BASE_PRIVATE`
+const basePath = I18N_BASE_PUBLIC
+const i18n = await queryI18nResourceV2({
+    basePath,
+    locale,
+    namespace,
+  })
+
+```
+
+### Release Guide
+
+Before the new version got released, the new key should available in PROD Environment.
+
+Check List:
+
+1. All string in the job got published, you can filter Environment by PROD and search key to check it.
+2. According the CDN cache expiration setting, you should also check if the key is present in the path, e.g. https://bin.bnbstatic.com/api/i18n/-/web/cms/zh-CN/Navigation
+
+### Migration
+
+Before the Migration you should get access of the CMS first.
+
+1. Notify all the teams which using the File you want to migrate, and stop update it in mono.
+2. Create all File your project using，name must be equal to the json file without `.json`, e.g. `accounts-ui.json` becomes `accounts-ui` as file name.
+3. Using "Upload JSON" in the add strings page.
+4. Click "Create Job" to create a Job, hold the job name.
+5. Find the job by the job name, Click publish select all to submit。
+6. If you have any PR in progress, you should also create a job with the PR changes, but you don't need to submit translation requirements again.
+7. Change the codebase and do the release process as usual, ref:[launchpad-ui migration PR](https://git.toolsfdg.net/mono/mono/pull/32301)
+
+
+[^1]: [Internationalization and localization wiki](https://en.wikipedia.org/wiki/Internationalization_and_localization)
+
+[^2]: [Smartling](https://dashboard.smartling.com/app/accounts/057fd503/account-overview/index.html) is the TMS(Translation management system) we are using to translate strings to multiple languages.
+
+[^3]: CDN, service clusters itself and browser all have individual cache policy.
